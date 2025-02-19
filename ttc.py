@@ -1,12 +1,15 @@
-﻿# -*- coding: utf-8 -*-
+﻿#!${VIRTUAL_ENV}/bin/python3
+# -*- coding: utf-8 -*-
 
 # Load prerequisites
 import requests
 import os.path
+from os import environ
+from sys import stderr
 
-# Timesaving 
+# Timesaving
 
-todoistURL = 'https://www.todoist.com/API'
+todoistURL = 'https://api.todoist.com/rest/v2'
 usedLabelIDs = []
 removeLabelIDs = []
 confirm = []
@@ -16,21 +19,53 @@ def pj(str):
    print(json.dumps(json.loads(str.content), indent=4))
    return
 
-# Set login parameters (old, insecure) and obtain token
-file = open('token.txt', 'r')
-usertoken = file.read().strip()
-token = {'token': usertoken}
+class Token:
+    def __init__(self, token):
+        self.token = token
 
-# Get a list of projects and their details by API request and using token obtained above 
+    def toDict(self):
+        return {'Authorization': 'Bearer '+self.token }
+
+class TodoistUnusedTagsRemover:
+    def __init__(self):
+        self.usertoken = ''
+
+    def main(self):
+        # Timesaving
+
+        todoistURL = 'https://api.todoist.com/rest/v2'
+        usedLabelIDs = []
+        removeLabelIDs = []
+        confirm = []
+
+        self.usertoken = self.getToken()
+
+
+    def getToken(self):
+        # Set login parameters (old, insecure) and obtain token
+        try:
+            return Token(os.environ['TODOIST_API_TOKEN'])
+        except KeyError:
+            print('Please set the TODOIST_API_TOKEN enviroment variable',file=stderr)
+            exit(1)
+
+TodoistUnusedTagsRemover().main()
+
+exit(1)
+
+
+token = {'Authorizaion': 'Bearer '+usertoken}
+
+# Get a list of projects and their details by API request and using token obtained above
 print("Getting a list of projects...")
-projectList = requests.post(todoistURL+"/getProjects", params=token).json()
+projectList = requests.post(todoistURL+"/projects", params=token).json()
 
 # Put just the project IDs into projectIDs
 projectIDs = [project['id'] for project in projectList]
 
 # Get a list of all labels
 print("Getting list of all labels...")
-labelList = requests.post(todoistURL+"/getLabels", params=token).json()
+labelList = requests.get(todoistURL+"/getLabels", params=token).json()
 
 # Put just the label IDs into labelIDs
 labelIDs = [labelList[label]['id'] for label in labelList]
@@ -41,7 +76,7 @@ for projectid in projectIDs:
     token.update({'project_id' : projectid})
     taskList = requests.post(todoistURL+"/getUncompletedItems", params=token).json()
     del token['project_id']
-    
+
     # Check if any content in each labels field and where there is, for each item append to a separate list
     for label in taskList:
         if label['labels']:
