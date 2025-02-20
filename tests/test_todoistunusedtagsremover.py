@@ -8,7 +8,7 @@ import requests
 
 
 class MockResponse:
-    text = open('mock-response-text.json','r').read()
+    text = open('tests/_files/mock-response-text.json','r').read()
 
 def test_getallprojects_response(monkeypatch,capsys):
     def mock_get(*args, **kwargs):
@@ -19,7 +19,7 @@ def test_getallprojects_response(monkeypatch,capsys):
     monkeypatch.setenv('TODOIST_API_TOKEN', 'foo')
 
   
-    assert TodoistUnusedTagsRemover().getAllProjects() == open('projects-expected-response.json','r').read()
+    assert TodoistUnusedTagsRemover().getAllProjects() == open('tests/_files/projects-expected-response.json','r').read()
 
 def test_main_method(monkeypatch,capsys):
     def mock_get(*args, **kwargs):
@@ -29,7 +29,7 @@ def test_main_method(monkeypatch,capsys):
 
     monkeypatch.setenv('TODOIST_API_TOKEN', 'foo')
     TodoistUnusedTagsRemover().main()
-    assert capsys.readouterr().out == open('main-expected-stdout.txt','r').read()
+    assert capsys.readouterr().out == open('tests/_files/main-expected-stdout.txt','r').read()
 
 test_data = [
     ('foo',{'Authorization':'Bearer foo'}),
