@@ -10,7 +10,24 @@ import requests
 class MockResponse:
     text = open('tests/_files/mock-response-text.json','r').read()
 
-def test_getallprojects_response(monkeypatch,capsys):
+def test_getallprojectids_method(monkeypatch):
+    def mock_get(*args, **kwargs):
+        return MockResponse()
+
+    monkeypatch.setattr(requests, 'get', mock_get)
+    monkeypatch.setenv('TODOIST_API_TOKEN', 'foo')
+
+    assert TodoistUnusedTagsRemover.getAllProjectIds() == [
+            "2335896288",
+            "2221874392",
+            "2336351010",
+            "2339540076",
+            "2242865859",
+            "2240700912"
+    ]
+            
+
+def test_getallprojects_response(monkeypatch):
     def mock_get(*args, **kwargs):
         return MockResponse()
 

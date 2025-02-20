@@ -38,7 +38,7 @@ class TodoistUnusedTagsRemover:
         removeLabelIDs = []
         confirm = []
 
-        self.getAllProjects()
+        print(self.getAllProjects())
 
     def getAllProjects(self):
         todoistURL = 'https://api.todoist.com/rest/v2'
@@ -50,7 +50,6 @@ class TodoistUnusedTagsRemover:
                 headers = self.usertoken.toDict()
         )
 
-        print(r.text)
         return r.text
 
 
