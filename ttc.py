@@ -38,7 +38,20 @@ class TodoistUnusedTagsRemover:
         removeLabelIDs = []
         confirm = []
 
+        self.getAllProjects()
+
+    def getAllProjects(self):
+        todoistURL = 'https://api.todoist.com/rest/v2'
+
         self.usertoken = self.getToken()
+
+        r = requests.get(
+                todoistURL+'/projects',
+                headers = self.usertoken.toDict()
+        )
+
+        print(r.text)
+        return r.text
 
 
     def getToken(self):
@@ -49,64 +62,68 @@ class TodoistUnusedTagsRemover:
             print('Please set the TODOIST_API_TOKEN enviroment variable',file=stderr)
             exit(1)
 
-TodoistUnusedTagsRemover().main()
-
-exit(1)
 
 
-token = {'Authorizaion': 'Bearer '+usertoken}
 
-# Get a list of projects and their details by API request and using token obtained above
-print("Getting a list of projects...")
-projectList = requests.post(todoistURL+"/projects", params=token).json()
+if os.environ.get('TEST','0') == '1' and os.environ.get('TEST_MODE','default') == 'debug':
+    TodoistUnusedTagsRemover().main()
 
-# Put just the project IDs into projectIDs
-projectIDs = [project['id'] for project in projectList]
+else:
+    if os.environ.get('TEST','0') == '0' and os.environ.get('TEST_MODE','default') == 'default':
 
-# Get a list of all labels
-print("Getting list of all labels...")
-labelList = requests.get(todoistURL+"/getLabels", params=token).json()
+        token = {'Authorizaion': 'Bearer '+usertoken}
 
-# Put just the label IDs into labelIDs
-labelIDs = [labelList[label]['id'] for label in labelList]
+        # Get a list of projects and their details by API request and using token obtained above
+        print("Getting a list of projects...")
+        projectList = requests.post(todoistURL+"/projects", params=token).json()
 
-# Get a list of incomplete tasks and the labels in use on them
-print("Getting a list of all incomplete tasks and any labels in use...")
-for projectid in projectIDs:
-    token.update({'project_id' : projectid})
-    taskList = requests.post(todoistURL+"/getUncompletedItems", params=token).json()
-    del token['project_id']
+        # Put just the project IDs into projectIDs
+        projectIDs = [project['id'] for project in projectList]
 
-    # Check if any content in each labels field and where there is, for each item append to a separate list
-    for label in taskList:
-        if label['labels']:
-            newlabel = label['labels']
-            for id in newlabel:
-                usedLabelIDs.append(id)
+        # Get a list of all labels
+        print("Getting list of all labels...")
+        labelList = requests.get(todoistURL+"/getLabels", params=token).json()
 
-# Remove the used labels from the overall list
-removeLabelIDs = labelIDs
-print("Checking for unused labels...")
-for label in usedLabelIDs:
-    if label in removeLabelIDs:
-        removeLabelIDs.remove(label)
+        # Put just the label IDs into labelIDs
+        labelIDs = [labelList[label]['id'] for label in labelList]
 
-# TODO: Add a check to see if there actually is anything to remove; if not, exit.
+        # Get a list of incomplete tasks and the labels in use on them
+        print("Getting a list of all incomplete tasks and any labels in use...")
+        for projectid in projectIDs:
+            token.update({'project_id' : projectid})
+            taskList = requests.post(todoistURL+"/getUncompletedItems", params=token).json()
+            del token['project_id']
 
-# Print list of labels to remove as a check
-#for x in labelList:
-#    if labelList[x]['id'] in removeLabelIDs:
-#        print(labelList[x]['name'])
+            # Check if any content in each labels field and where there is, for each item append to a separate list
+            for label in taskList:
+                if label['labels']:
+                    newlabel = label['labels']
+                    for id in newlabel:
+                        usedLabelIDs.append(id)
 
-#confirm = input("Press Y to remove the above: ")
-#if "Y" in confirm:
-print("Removing unused label(s)...")
+        # Remove the used labels from the overall list
+        removeLabelIDs = labelIDs
+        print("Checking for unused labels...")
+        for label in usedLabelIDs:
+            if label in removeLabelIDs:
+                removeLabelIDs.remove(label)
 
-# Remove the remainders from Todoist
-for x in labelList:
-	if labelList[x]['id'] in removeLabelIDs:
-            token.update({'name' : labelList[x]['name']})
-            requests.post(todoistURL+"/deleteLabel", params=token)
+        # TODO: Add a check to see if there actually is anything to remove; if not, exit.
+
+        # Print list of labels to remove as a check
+        #for x in labelList:
+        #    if labelList[x]['id'] in removeLabelIDs:
+        #        print(labelList[x]['name'])
+
+        #confirm = input("Press Y to remove the above: ")
+        #if "Y" in confirm:
+        print("Removing unused label(s)...")
+
+        # Remove the remainders from Todoist
+        for x in labelList:
+            if labelList[x]['id'] in removeLabelIDs:
+                    token.update({'name' : labelList[x]['name']})
+                    requests.post(todoistURL+"/deleteLabel", params=token)
 '''
 
 TODO
